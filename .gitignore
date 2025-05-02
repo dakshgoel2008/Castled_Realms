@@ -1,0 +1,13 @@
+.venv
+
+# Cache-files
+__pycache__/
+
+# editor specific 
+.vscode/
+
+# OS-specific
+.DS_Store
+
+# Log files
+*.log
