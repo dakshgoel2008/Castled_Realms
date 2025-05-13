@@ -42,7 +42,7 @@ class State:
 
     # going for move selection and validation
     def getValidMoves(self) -> list:
-        """Get all valid moves for the current player."""
+        """Get all valid Move objects for the current player."""
         valid_moves = []
         for r in range(8):
             for c in range(8):
@@ -50,7 +50,11 @@ class State:
                 if piece != "." and (
                     piece[0] == "w" if self.white_to_move else piece[0] == "b"
                 ):
-                    valid_moves.extend(self.getPieceMoves(r, c))
+                    piece_moves = self.getPieceMoves(r, c)
+                    for start, end in piece_moves:
+                        valid_moves.append(
+                            Move(start, end, self.board)
+                        )  # wrap in Move class
         return valid_moves
 
     # selecting a piece and getting its valid moves
@@ -71,23 +75,23 @@ class State:
             return self.getKingMoves(r, c)
         return []
 
+    # just for reference of coding purposes bro.
+    """
+        <=======================NOTATION=====================>:
+                col 0 col 1 col 2 col 3 col 4 col 5 col 6 col 7
+        row 0 Rook Knight Bishop Queen King Bishop Knight Rook
+        row 1  <--------------Black pawns----------------->
+        row 2
+        row 3
+        row 4
+        row 5
+        row 6  <--------------White pawns----------------->
+        row 7 Rook Knight Bishop Queen King Bishop Knight Rook
+    
+    """
+
     def getPawnMoves(self, r, c) -> list:
         """Get all valid moves for a pawn."""
-
-        # just for reference of coding purposes bro.
-        """
-        FOR CODING PURPOSES I WILL BE USING THIS NOTATION:
-                  col 0 col 1 col 2 col 3 col 4 col 5 col 6 col 7
-            row 0 Rook Knight Bishop Queen King Bishop Knight Rook
-            row 1  <--------------Black pawns----------------->
-            row 2
-            row 3
-            row 4
-            row 5
-            row 6  <--------------White pawns----------------->
-            row 7 Rook Knight Bishop Queen King Bishop Knight Rook
-        
-        """
         moves = []
         direction = (
             -1 if self.white_to_move else 1
@@ -97,14 +101,23 @@ class State:
         )  # starting row for white pawn is 6, black pawn is 1
         if self.board[r + direction][c] == ".":
             moves.append(((r, c), (r + direction, c)))  # can move one square forward
-        if r == start_row and self.board[r + 2 * direction][c] == ".":
+        if (
+            r == start_row
+            and self.board[r + direction][c] == "."
+            and self.board[r + 2 * direction][c] == "."
+        ):
             moves.append(
                 ((r, c), (r + 2 * direction, c))
-            )  # can move two squares from starting position
-        if c - 1 >= 0 and self.board[r + direction][c - 1] != ".":
-            moves.append(((r, c), (r + direction, c - 1)))  # left diagonal capture
-        if c + 1 < 8 and self.board[r + direction][c + 1] != ".":
-            moves.append(((r, c), (r + direction, c + 1)))  # right diagonal capture
+            )  # can move two squares from starting position but only once
+        if c - 1 >= 0:
+            target = self.board[r + direction][c - 1]
+            if target != "." and target[0] != self.board[r][c][0]:
+                moves.append(((r, c), (r + direction, c - 1)))
+        if c + 1 < 8:
+            target = self.board[r + direction][c + 1]
+            if target != "." and target[0] != self.board[r][c][0]:
+                moves.append(((r, c), (r + direction, c + 1)))
+
         return moves
 
     def getRookMoves(self, r, c) -> list:
@@ -132,6 +145,7 @@ class State:
                         break
                 else:
                     break
+        return moves
 
     def getKnightMoves(self, r, c) -> list:
         """Get all valid moves for a knight."""
@@ -174,6 +188,7 @@ class State:
                         break
                 else:
                     break
+        return moves
 
     def getQueenMoves(self, r, c) -> list:
         """Get all valid moves for a queen."""
@@ -202,6 +217,7 @@ class State:
                         break
                 else:
                     break
+        return moves
 
     def getKingMoves(self, r, c) -> list:
         """Get all valid moves for a king."""
@@ -232,18 +248,32 @@ class Move:
 
     # just a dictionary to convert between ranks and rows, files and columns
     ranksToRows = {"1": 7, "2": 6, "3": 5, "4": 4, "5": 3, "6": 2, "7": 1, "8": 0}
-    rowsToRanks = {v: k for k, v in ranksToRows.items()}
+    rowsToRanks = {
+        v: k for k, v in ranksToRows.items()
+    }  # just reversing the ranks and rows
     filesToCols = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7}
     colsToFiles = {v: k for k, v in filesToCols.items()}
 
-    # s, e => tuple: start square location, end square location
-    def __init__(self, s, e, board):
-        self.startRow = s[0]
-        self.startCol = s[1]
-        self.endRow = e[0]
-        self.endCol = e[1]
-        self.pieceMoved = board[s[0]][s[1]]
-        self.pieceCaptured = board[e[0]][e[1]]
+    def __init__(self, startSq, endSq, board):
+        self.startRow = startSq[0]
+        self.startCol = startSq[1]
+        self.endRow = endSq[0]
+        self.endCol = endSq[1]
+        self.pieceMoved = board[self.startRow][self.startCol]
+        self.pieceCaptured = board[self.endRow][self.endCol]
+
+        # Unique ID for the move
+        self.moveID = (
+            self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
+        )
+
+    def __eq__(self, other):  # just for comparing the moves
+        if isinstance(other, Move):
+            return self.moveID == other.moveID
+        return False
+
+    def __hash__(self):  # just allow me to use the moves in a set
+        return hash(self.moveID)
 
     # just for debugging purposes
     def getChessNotation(self) -> str:

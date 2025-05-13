@@ -4,7 +4,7 @@ import pygame as p
 from config import DIMENSION, HEIGHT, MAX_FPS, SQUARE_SIZE, WIDTH
 
 
-def load_images() -> dict[str, p.Surface]:
+def load_images() -> dict[str, p.Surface]:  # p.Surface -> object representing an image
     """Load and return scaled chess piece images."""
     pieces = ["wB", "wK", "wN", "wp", "wQ", "wR", "bB", "bK", "bN", "bp", "bQ", "bR"]
     images = {}
@@ -28,7 +28,7 @@ def draw_board(screen) -> None:
     colors = [p.Color(255, 206, 158), p.Color(209, 139, 71)]
     for r in range(DIMENSION):
         for c in range(DIMENSION):
-            color = colors[(r + c) % 2]
+            color = colors[(r + c) & 1]  # for toggling the colors
             p.draw.rect(
                 screen,
                 color,
@@ -54,14 +54,14 @@ def highlight_squares(screen, selected_sq, valid_moves) -> None:
         r, c = selected_sq
         s = p.Surface((SQUARE_SIZE, SQUARE_SIZE))
         s.set_alpha(100)
-        s.fill(p.Color("blue"))
+        s.fill(p.Color("black"))
         screen.blit(s, (c * SQUARE_SIZE, r * SQUARE_SIZE))
 
         s.fill(p.Color("yellow"))
         for move in valid_moves:
-            start, end = move
-            if start == selected_sq:
-                er, ec = end
+            if move.startRow == r and move.startCol == c:
+                er = move.endRow
+                ec = move.endCol
                 screen.blit(s, (ec * SQUARE_SIZE, er * SQUARE_SIZE))
 
 
