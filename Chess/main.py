@@ -54,7 +54,7 @@ def main() -> None:
                 gs.getValidMoves()
             )  # again find the valid moves at some instance
             moveMade = False
-        draw_game_state(screen, gs.board, images, sqSelected, validMoves)
+        draw_game_state(screen, gs.board, images, sqSelected, validMoves, gs)
         draw_labels(screen, font)
         clock.tick(MAX_FPS)
         p.display.flip()

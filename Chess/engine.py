@@ -20,6 +20,8 @@ class State:
         )
         self.white_to_move = True  # first move is white
         self.move_log = []  # list of moves made
+        self.whiteKingLoc = (0, 4)
+        self.blackKingLoc = (7, 4)
 
     def makeMove(self, move) -> None:
         """Make a move on the board."""
@@ -30,6 +32,12 @@ class State:
         self.move_log.append(move)  # for history of moves
         self.white_to_move = not self.white_to_move  # swapping players
 
+        # if king is moved take the record of the new positions of the king
+        if move.pieceMoved == "wK":
+            self.whiteKingLoc = (move.endRow, move.endCol)
+        elif move.pieceMoved == "bK":
+            self.blackKingLoc = (move.endRow, move.endCol)
+
     def undoMove(self) -> None:
         """Undo the last move."""
         if len(self.move_log) != 0:
@@ -37,13 +45,15 @@ class State:
             self.board[move.startRow][move.startCol] = move.pieceMoved
             self.board[move.endRow][move.endCol] = move.pieceCaptured
             self.white_to_move = not self.white_to_move
-        else:
-            print("No moves to undo.")
 
-    # going for move selection and validation
-    def getValidMoves(self) -> list:
-        """Get all valid Move objects for the current player."""
-        valid_moves = []
+        if move.pieceMoved == "wK":
+            self.whiteKingLoc = (move.startRow, move.startCol)
+        elif move.pieceMoved == "bK":
+            self.blackKingLoc = (move.startRow, move.startCol)
+
+    # All pseudo moves of the pieces
+    def getAllPseudoLegalMoves(self) -> list:
+        moves = []
         for r in range(8):
             for c in range(8):
                 piece = self.board[r][c]
@@ -52,10 +62,56 @@ class State:
                 ):
                     piece_moves = self.getPieceMoves(r, c)
                     for start, end in piece_moves:
-                        valid_moves.append(
-                            Move(start, end, self.board)
-                        )  # wrap in Move class
-        return valid_moves
+                        moves.append(Move(start, end, self.board))
+
+        return moves
+
+    # going for move selection and validation
+    def getValidMoves(self) -> list:
+        """Get all valid Move objects for the current player."""
+
+        # getting first all the pseudo moves.
+        moves = self.getAllPseudoLegalMoves()
+
+        for i in range(len(moves) - 1, -1, -1):
+            self.makeMove(moves[i])
+            self.white_to_move = not self.white_to_move
+
+            if self.inCheck():
+                moves.remove(moves[i])
+            self.white_to_move = not self.white_to_move
+            self.undoMove()
+
+        return moves
+
+    def inCheck(self) -> bool:
+        # check for those squares which can be attacked to conquer the king of particular side
+        if self.white_to_move:
+            return self.squareUnderAttack(self.whiteKingLoc[0], self.whiteKingLoc[1])
+        else:
+            return self.squareUnderAttack(self.blackKingLoc[0], self.blackKingLoc[1])
+
+    def squareUnderAttack(self, r, c) -> bool:
+        self.white_to_move = not self.white_to_move  # toggle the players
+        opponent_moves = self.getAllPseudoLegalMoves()
+        self.white_to_move = not self.white_to_move
+
+        for move in opponent_moves:
+            if move.endRow == r and move.endCol == c:
+                return True
+
+        return False
+
+    def checkMate(self) -> str:
+        if not self.getValidMoves():  # No valid moves available
+            if self.inCheck():
+                return "checkmate"
+            else:
+                return "stalemate"
+        elif self.inCheck():
+            return "check"
+        else:
+            return "play"
 
     # selecting a piece and getting its valid moves
     def getPieceMoves(self, r, c) -> list:

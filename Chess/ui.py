@@ -16,10 +16,10 @@ def load_images() -> dict[str, p.Surface]:  # p.Surface -> object representing a
     return images
 
 
-def draw_game_state(screen, board, images, selected_sq, valid_moves) -> None:
+def draw_game_state(screen, board, images, selected_sq, valid_moves, gs) -> None:
     draw_board(screen)
     draw_labels(screen, p.font.SysFont("Arial", 18))
-    highlight_squares(screen, selected_sq, valid_moves)
+    highlight_squares(screen, selected_sq, valid_moves, gs)
     draw_pieces(screen, board, images)
 
 
@@ -49,7 +49,7 @@ def draw_pieces(screen, board, images) -> None:
 
 
 # Highlight squares
-def highlight_squares(screen, selected_sq, valid_moves) -> None:
+def highlight_squares(screen, selected_sq, valid_moves, gs) -> None:
     if selected_sq:
         r, c = selected_sq
         s = p.Surface((SQUARE_SIZE, SQUARE_SIZE))
@@ -63,6 +63,13 @@ def highlight_squares(screen, selected_sq, valid_moves) -> None:
                 er = move.endRow
                 ec = move.endCol
                 screen.blit(s, (ec * SQUARE_SIZE, er * SQUARE_SIZE))
+
+    if gs.inCheck():
+        king_row, king_col = gs.whiteKingLoc if gs.white_to_move else gs.blackKingLoc
+        s = p.Surface((SQUARE_SIZE, SQUARE_SIZE))
+        s.set_alpha(100)
+        s.fill(p.Color("red"))
+        screen.blit(s, (king_col * SQUARE_SIZE, king_row * SQUARE_SIZE))
 
 
 # Draw coordinate labels
