@@ -71,6 +71,32 @@ def highlight_squares(screen, selected_sq, valid_moves, gs) -> None:
         s.fill(p.Color("red"))
         screen.blit(s, (king_col * SQUARE_SIZE, king_row * SQUARE_SIZE))
 
+    if gs.checkMate() == "checkmate":
+        s = p.Surface((WIDTH, HEIGHT))
+        s.set_alpha(100)
+        s.fill(p.Color("green"))
+        screen.blit(s, (0, 0))
+        text = p.font.SysFont("Times New Roman", 50).render(
+            "Checkmate!", True, p.Color("black")
+        )
+        screen.blit(
+            text,
+            (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() // 2),
+        )
+
+    if gs.checkMate() == "stalemate":
+        s = p.Surface((WIDTH, HEIGHT))
+        s.set_alpha(100)
+        s.fill(p.Color("green"))
+        screen.blit(s, (0, 0))
+        text = p.font.SysFont("Times New Roman", 50).render(
+            "Stalemate!", True, p.Color("black")
+        )
+        screen.blit(
+            text,
+            (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() // 2),
+        )
+
 
 # Draw coordinate labels
 def draw_labels(screen, font) -> None:
