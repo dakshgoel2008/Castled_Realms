@@ -20,12 +20,14 @@ class State:
         )
         self.white_to_move = True  # first move is white
         self.move_log = []  # list of moves made
-        self.whiteKingLoc = (0, 4)
-        self.blackKingLoc = (7, 4)
+        self.whiteKingLoc = (7, 4)
+        self.blackKingLoc = (0, 4)
+        # En passant target square - stores the square behind the pawn that just moved two squares
+        self.enpassant_possible = ()  # (row, col) of the square where en passant capture is possible
 
     def makeMove(self, move) -> None:
         """Make a move on the board."""
-        self.board[move.startRow][move.startCol] = "."  # inital square has to be empty
+        self.board[move.startRow][move.startCol] = "."  # initial square has to be empty
         self.board[move.endRow][
             move.endCol
         ] = move.pieceMoved  # move the piece to the new square
@@ -38,6 +40,25 @@ class State:
         elif move.pieceMoved == "bK":
             self.blackKingLoc = (move.endRow, move.endCol)
 
+        # pawn promotion:
+        if move.isPawnPromotion:
+            self.board[move.endRow][move.endCol] = move.pieceMoved[0] + "Q"
+
+        # En passant move handling
+        if move.isEnpassantMove:
+            # Remove the captured pawn (which is not on the end square)
+            self.board[move.startRow][move.endCol] = "."  # Remove the captured pawn
+
+        # Update en passant possibility
+        if move.pieceMoved[1] == "p" and abs(move.startRow - move.endRow) == 2:
+            # Pawn moved two squares, set en passant target square
+            self.enpassant_possible = (
+                (move.startRow + move.endRow) // 2,
+                move.startCol,
+            )
+        else:
+            self.enpassant_possible = ()
+
     def undoMove(self) -> None:
         """Undo the last move."""
         if len(self.move_log) != 0:
@@ -46,10 +67,33 @@ class State:
             self.board[move.endRow][move.endCol] = move.pieceCaptured
             self.white_to_move = not self.white_to_move
 
-        if move.pieceMoved == "wK":
-            self.whiteKingLoc = (move.startRow, move.startCol)
-        elif move.pieceMoved == "bK":
-            self.blackKingLoc = (move.startRow, move.startCol)
+            # Restore king position
+            if move.pieceMoved == "wK":
+                self.whiteKingLoc = (move.startRow, move.startCol)
+            elif move.pieceMoved == "bK":
+                self.blackKingLoc = (move.startRow, move.startCol)
+
+            # Handle en passant undo
+            if move.isEnpassantMove:
+                # Restore the captured pawn
+                captured_pawn = "bp" if move.pieceMoved[0] == "w" else "wp"
+                self.board[move.startRow][move.endCol] = captured_pawn
+
+            # Restore en passant possibility from previous move
+            if len(self.move_log) > 0:
+                prev_move = self.move_log[-1]
+                if (
+                    prev_move.pieceMoved[1] == "p"
+                    and abs(prev_move.startRow - prev_move.endRow) == 2
+                ):
+                    self.enpassant_possible = (
+                        (prev_move.startRow + prev_move.endRow) // 2,
+                        prev_move.startCol,
+                    )
+                else:
+                    self.enpassant_possible = ()
+            else:
+                self.enpassant_possible = ()
 
     # All pseudo moves of the pieces
     def getAllPseudoLegalMoves(self) -> list:
@@ -131,21 +175,6 @@ class State:
             return self.getKingMoves(r, c)
         return []
 
-    # just for reference of coding purposes bro.
-    """
-        <=======================NOTATION=====================>:
-                col 0 col 1 col 2 col 3 col 4 col 5 col 6 col 7
-        row 0 Rook Knight Bishop Queen King Bishop Knight Rook
-        row 1  <--------------Black pawns----------------->
-        row 2
-        row 3
-        row 4
-        row 5
-        row 6  <--------------White pawns----------------->
-        row 7 Rook Knight Bishop Queen King Bishop Knight Rook
-    
-    """
-
     def getPawnMoves(self, r, c) -> list:
         """Get all valid moves for a pawn."""
         moves = []
@@ -155,24 +184,39 @@ class State:
         start_row = (
             6 if self.white_to_move else 1
         )  # starting row for white pawn is 6, black pawn is 1
-        if self.board[r + direction][c] == ".":
+
+        # Forward moves
+        if 0 <= r + direction < 8 and self.board[r + direction][c] == ".":
             moves.append(((r, c), (r + direction, c)))  # can move one square forward
-        if (
-            r == start_row
-            and self.board[r + direction][c] == "."
-            and self.board[r + 2 * direction][c] == "."
-        ):
-            moves.append(
-                ((r, c), (r + 2 * direction, c))
-            )  # can move two squares from starting position but only once
-        if c - 1 >= 0:
-            target = self.board[r + direction][c - 1]
-            if target != "." and target[0] != self.board[r][c][0]:
-                moves.append(((r, c), (r + direction, c - 1)))
-        if c + 1 < 8:
-            target = self.board[r + direction][c + 1]
-            if target != "." and target[0] != self.board[r][c][0]:
-                moves.append(((r, c), (r + direction, c + 1)))
+            # Two square move from starting position
+            if r == start_row and self.board[r + 2 * direction][c] == ".":
+                moves.append(
+                    ((r, c), (r + 2 * direction, c))
+                )  # can move two squares from starting position but only once
+
+        # Diagonal captures
+        for dc in [-1, 1]:  # Check both diagonal directions
+            if 0 <= c + dc < 8 and 0 <= r + direction < 8:
+                target = self.board[r + direction][c + dc]
+                if target != "." and target[0] != self.board[r][c][0]:
+                    moves.append(((r, c), (r + direction, c + dc)))
+
+        # En passant capture
+        if len(self.enpassant_possible) != 0:
+            if (
+                abs(r - self.enpassant_possible[0]) == 1
+                and abs(c - self.enpassant_possible[1]) == 1
+            ):
+                # Check if we're on the correct rank for en passant
+                if (self.white_to_move and r == 3) or (
+                    not self.white_to_move and r == 4
+                ):
+                    moves.append(
+                        (
+                            (r, c),
+                            (self.enpassant_possible[0], self.enpassant_possible[1]),
+                        )
+                    )
 
         return moves
 
@@ -318,6 +362,19 @@ class Move:
         self.pieceMoved = board[self.startRow][self.startCol]
         self.pieceCaptured = board[self.endRow][self.endCol]
 
+        # pawn promotion:
+        self.isPawnPromotion = False
+        if (self.pieceMoved == "wp" and self.endRow == 0) or (
+            self.pieceMoved == "bp" and self.endRow == 7
+        ):
+            self.isPawnPromotion = True
+
+        # En passant detection
+        self.isEnpassantMove = False
+        if self.pieceMoved[1] == "p":
+            if (self.endCol != self.startCol) and self.pieceCaptured == ".":
+                self.isEnpassantMove = True
+
         # Unique ID for the move
         self.moveID = (
             self.startRow * 1000 + self.startCol * 100 + self.endRow * 10 + self.endCol
@@ -333,9 +390,13 @@ class Move:
 
     # just for debugging purposes
     def getChessNotation(self) -> str:
-        return self.getRankFile(self.startRow, self.startCol) + self.getRankFile(
+        # Add 'e.p.' suffix for en passant moves
+        notation = self.getRankFile(self.startRow, self.startCol) + self.getRankFile(
             self.endRow, self.endCol
         )
+        if self.isEnpassantMove:
+            notation += " e.p."
+        return notation
 
     def getRankFile(self, r, c) -> str:
         # convert the row and column to rank and file

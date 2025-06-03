@@ -76,8 +76,10 @@ def highlight_squares(screen, selected_sq, valid_moves, gs) -> None:
         s.set_alpha(100)
         s.fill(p.Color("green"))
         screen.blit(s, (0, 0))
-        text = p.font.SysFont("Times New Roman", 50).render(
-            "Checkmate!", True, p.Color("black")
+        text = p.font.SysFont("Times New Roman", 40).render(
+            "Checkmate!" + ("White" if not gs.white_to_move else "Black") + " wins",
+            True,
+            p.Color("black"),
         )
         screen.blit(
             text,

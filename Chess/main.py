@@ -37,12 +37,16 @@ def main() -> None:
                 """If it was a 2nd click, make a move"""
                 if len(playerClicks) == 2:
                     move = Move(playerClicks[0], playerClicks[1], gs.board)
-                    if move in validMoves:  # if the move is valid
-                        gs.makeMove(move)  # thus make the required move
-                        moveMade = True
-                    sqSelected = ()  # reset the square selected and player clicks
-                    playerClicks = []
+                    for i in range(len(validMoves)):
+                        if move == validMoves[i]:  # if the move is valid
+                            gs.makeMove(validMoves[i])  # thus make the required move
+                            moveMade = True
+                        sqSelected = ()  # reset the square selected and player clicks
+                        playerClicks = []
+                    if not moveMade:
+                        playerClicks = [sqSelected]
 
+            # Keys pressed handler.
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_z:  # for better user experience
                     gs.undoMove()
