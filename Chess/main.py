@@ -24,9 +24,15 @@ def main() -> None:
             if e.type == p.QUIT:
                 running = False
             elif e.type == p.MOUSEBUTTONDOWN:
-                loc = p.mouse.get_pos()
-                col = loc[0] // (SQUARE_SIZE)
-                row = loc[1] // (SQUARE_SIZE)
+                loc = p.mouse.get_pos()  # to get the mouse position
+                col = loc[0] // (
+                    SQUARE_SIZE
+                )  # on dividing the x coordinate by the square size we will get the column
+                row = loc[1] // (SQUARE_SIZE)  # same for row also
+
+                if row >= DIMENSION or col >= DIMENSION:
+                    continue
+
                 if sqSelected == (row, col):  # if the user clicks the same square again
                     sqSelected = ()
                     playerClicks = []
@@ -35,6 +41,8 @@ def main() -> None:
                     playerClicks.append(sqSelected)
 
                 """If it was a 2nd click, make a move"""
+                # TODO: Have to work on those scenerios where user clicks on wrong position the game is getting closed
+
                 if len(playerClicks) == 2:
                     move = Move(playerClicks[0], playerClicks[1], gs.board)
                     for i in range(len(validMoves)):
@@ -51,7 +59,7 @@ def main() -> None:
                 if e.key == p.K_z:  # for better user experience
                     gs.undoMove()
                     moveMade = True
-                # Not allowing the redo 😇
+                # Not allowing the redo 😇 -> for obvious reasons.
 
         if moveMade:
             validMoves = (
@@ -60,8 +68,8 @@ def main() -> None:
             moveMade = False
         draw_game_state(screen, gs.board, images, sqSelected, validMoves, gs)
         draw_labels(screen, font)
-        clock.tick(MAX_FPS)
-        p.display.flip()
+        clock.tick(MAX_FPS)  # TODO: update this later.
+        p.display.flip()  # pygame display update
 
 
 if __name__ == "__main__":

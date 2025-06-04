@@ -6,6 +6,8 @@ from config import DIMENSION, HEIGHT, MAX_FPS, SQUARE_SIZE, WIDTH
 
 def load_images() -> dict[str, p.Surface]:  # p.Surface -> object representing an image
     """Load and return scaled chess piece images."""
+    # used same name of the pieces as the images:
+    # wX -> means white piece and bX -> means black piece {X belongs to all the pieces available in chess board}
     pieces = ["wB", "wK", "wN", "wp", "wQ", "wR", "bB", "bK", "bN", "bp", "bQ", "bR"]
     images = {}
     for piece in pieces:

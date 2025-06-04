@@ -1,5 +1,18 @@
 import numpy as np
 
+"""
+    My Chess Board:
+    0  bR  bN  bB  bQ  bK  bB  bN  bR
+    1  bp  bp  bp  bp  bp  bp  bp  bp
+    2  .   .   .   .   .   .   .   .
+    3  .   .   .   .   .   .   .   .
+    4  .   .   .   .   .   .   .   .
+    5  .   .   .   .   .   .   .   .
+    6  wp  wp  wp  wp  wp  wp  wp  wp
+    7  wR  wN  wB  wQ  wK  wB  wN  wR
+    -  a   b   c   d   e   f   g   h
+"""
+
 
 class State:
     """This class represents the state of the chess game."""
@@ -18,9 +31,9 @@ class State:
                 ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"],
             ]
         )
-        self.white_to_move = True  # first move is white
+        self.white_to_move = True  # first move is white (According to chess rules)
         self.move_log = []  # list of moves made
-        self.whiteKingLoc = (7, 4)
+        self.whiteKingLoc = (7, 4)  #
         self.blackKingLoc = (0, 4)
         # En passant target square - stores the square behind the pawn that just moved two squares
         self.enpassant_possible = ()  # (row, col) of the square where en passant capture is possible
@@ -28,9 +41,8 @@ class State:
     def makeMove(self, move) -> None:
         """Make a move on the board."""
         self.board[move.startRow][move.startCol] = "."  # initial square has to be empty
-        self.board[move.endRow][
-            move.endCol
-        ] = move.pieceMoved  # move the piece to the new square
+        # move the piece to the new square
+        self.board[move.endRow][move.endCol] = move.pieceMoved
         self.move_log.append(move)  # for history of moves
         self.white_to_move = not self.white_to_move  # swapping players
 
@@ -50,38 +62,54 @@ class State:
             self.board[move.startRow][move.endCol] = "."  # Remove the captured pawn
 
         # Update en passant possibility
+
+        # only the pawn which have the right to move two squares can be set as the en passant target square
+
+        # for my understanding:
+        """        . . P2 . .      . . . . .     . . . . .
+                   . . . . .   ->  . . . . .  -> . . P1 . .
+                   . P1 . . .      . P1 P2 .     . . . . .
+        """
         if move.pieceMoved[1] == "p" and abs(move.startRow - move.endRow) == 2:
-            # Pawn moved two squares, set en passant target square
             self.enpassant_possible = (
                 (move.startRow + move.endRow) // 2,
-                move.startCol,
+                move.startCol,  # col remains the same
             )
         else:
             self.enpassant_possible = ()
 
     def undoMove(self) -> None:
         """Undo the last move."""
+        # atleast move_log has to have something for deletion.
         if len(self.move_log) != 0:
             move = self.move_log.pop()  # get the last move
             self.board[move.startRow][move.startCol] = move.pieceMoved
-            self.board[move.endRow][move.endCol] = move.pieceCaptured
-            self.white_to_move = not self.white_to_move
+            self.board[move.endRow][
+                move.endCol
+            ] = (
+                move.pieceCaptured
+            )  # initially pieceCaptured was empty bro so don't think of that case.
+            self.white_to_move = (
+                not self.white_to_move
+            )  # now change the player dude to undo other player's move.
 
-            # Restore king position
+            # Restore king position: Badshah ko alag se sahi rakhna padega bro. Nahi to destruction🔥
             if move.pieceMoved == "wK":
                 self.whiteKingLoc = (move.startRow, move.startCol)
             elif move.pieceMoved == "bK":
                 self.blackKingLoc = (move.startRow, move.startCol)
 
-            # Handle en passant undo
+            # handling en passant undo
             if move.isEnpassantMove:
                 # Restore the captured pawn
                 captured_pawn = "bp" if move.pieceMoved[0] == "w" else "wp"
-                self.board[move.startRow][move.endCol] = captured_pawn
+                self.board[move.startRow][
+                    move.endCol
+                ] = captured_pawn  # can use any col both will be same.
 
             # Restore en passant possibility from previous move
             if len(self.move_log) > 0:
-                prev_move = self.move_log[-1]
+                prev_move = self.move_log[-1]  # check from back bro.
                 if (
                     prev_move.pieceMoved[1] == "p"
                     and abs(prev_move.startRow - prev_move.endRow) == 2
@@ -97,6 +125,8 @@ class State:
 
     # All pseudo moves of the pieces
     def getAllPseudoLegalMoves(self) -> list:
+        # here we are just exploring all the moves possible.
+        # Later will be optimising for valid moves only.
         moves = []
         for r in range(8):
             for c in range(8):
@@ -117,13 +147,21 @@ class State:
         # getting first all the pseudo moves.
         moves = self.getAllPseudoLegalMoves()
 
+        # the trick is to move backwards through the moves and check if the king is in check after making each move -> moving backwards helps to avoid cases when we iterate through the list and remove elements from it and can't access the next element as it is shifted to the left
         for i in range(len(moves) - 1, -1, -1):
+
+            # NERD approach
+            # TODO: Will modify this approach for better performance
             self.makeMove(moves[i])
-            self.white_to_move = not self.white_to_move
+            self.white_to_move = (
+                not self.white_to_move
+            )  # generate all the moves for the opponent first and check the positions where opponents can attack the king of current player
 
             if self.inCheck():
                 moves.remove(moves[i])
             self.white_to_move = not self.white_to_move
+
+            # now undo the move to restore the board state
             self.undoMove()
 
         return moves
@@ -131,11 +169,15 @@ class State:
     def inCheck(self) -> bool:
         # check for those squares which can be attacked to conquer the king of particular side
         if self.white_to_move:
-            return self.squareUnderAttack(self.whiteKingLoc[0], self.whiteKingLoc[1])
+            return self.squareUnderAttack(
+                self.whiteKingLoc[0], self.whiteKingLoc[1]
+            )  # (r, c)
         else:
             return self.squareUnderAttack(self.blackKingLoc[0], self.blackKingLoc[1])
 
     def squareUnderAttack(self, r, c) -> bool:
+        # this is very obvious code bro.
+
         self.white_to_move = not self.white_to_move  # toggle the players
         opponent_moves = self.getAllPseudoLegalMoves()
         self.white_to_move = not self.white_to_move
@@ -147,17 +189,20 @@ class State:
         return False
 
     def checkMate(self) -> str:
-        if not self.getValidMoves():  # No valid moves available
-            if self.inCheck():
+        if not self.getValidMoves():  # if no valid moves available
+            if (
+                self.inCheck()
+            ):  # either it will be a checkmate or stalemate if still there's a check
                 return "checkmate"
             else:
                 return "stalemate"
-        elif self.inCheck():
+        elif (
+            self.inCheck()
+        ):  # if valid moves available and in check ask the player to shut mind off and move his required move
             return "check"
         else:
-            return "play"
+            return "play"  # already in good position bro, just play your game.
 
-    # selecting a piece and getting its valid moves
     def getPieceMoves(self, r, c) -> list:
         """Get all valid moves for a piece."""
         piece = self.board[r][c]
@@ -352,12 +397,14 @@ class Move:
         v: k for k, v in ranksToRows.items()
     }  # just reversing the ranks and rows
     filesToCols = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5, "g": 6, "h": 7}
-    colsToFiles = {v: k for k, v in filesToCols.items()}
+    colsToFiles = {
+        v: k for k, v in filesToCols.items()
+    }  # just reversing the files and columns
 
     def __init__(self, startSq, endSq, board):
-        self.startRow = startSq[0]
+        self.startRow = startSq[0]  # initial position of a piece (startRow, startCol)
         self.startCol = startSq[1]
-        self.endRow = endSq[0]
+        self.endRow = endSq[0]  # final position of a piece (endRow, endCol)
         self.endCol = endSq[1]
         self.pieceMoved = board[self.startRow][self.startCol]
         self.pieceCaptured = board[self.endRow][self.endCol]
@@ -382,7 +429,9 @@ class Move:
 
     def __eq__(self, other):  # just for comparing the moves
         if isinstance(other, Move):
-            return self.moveID == other.moveID
+            return (
+                self.moveID == other.moveID
+            )  # use of moveId helped a lot for unique identification -> using technique learned in Rabin Karp algorithm (ashing)
         return False
 
     def __hash__(self):  # just allow me to use the moves in a set
