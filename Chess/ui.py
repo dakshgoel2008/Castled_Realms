@@ -174,7 +174,7 @@ def highlight_squares(screen, selected_sq, valid_moves, gs) -> None:
         r, c = selected_sq
         s = p.Surface((SQUARE_SIZE, SQUARE_SIZE))
         s.set_alpha(100)
-        s.fill(p.Color("black"))
+        s.fill(p.Color("blue"))
         screen.blit(s, (c * SQUARE_SIZE, r * SQUARE_SIZE))
 
         s.fill(p.Color("yellow"))
