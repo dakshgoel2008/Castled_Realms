@@ -185,6 +185,9 @@ class State:
                         move.endCol + 1
                     ]
                     self.board[move.endRow][move.endCol + 1] = "."
+            
+            #TODO: logic for undoing check.
+            
 
     # update castle rights:
     def updateCastleRights(self, move):

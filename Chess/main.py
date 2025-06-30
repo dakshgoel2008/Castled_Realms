@@ -1,8 +1,8 @@
 import pygame as p
 from config import DIMENSION, HEIGHT, MAX_FPS, SQUARE_SIZE, WIDTH
 from engine import Move, State
-from smartMoveFinder import findRandomMove
-from ui import animate_move, draw_game_state, draw_labels, load_images
+from smartMoveFinder import findBestMove, findRandomMove
+from ui import animate_move, draw_game_state, load_images
 
 
 def main() -> None:
@@ -18,10 +18,9 @@ def main() -> None:
 
     sqSelected = ()
     playerClicks = []
-    font = p.font.SysFont("Times New Roman", 18)
     running = True
     # AI work
-    playerOne = False  # True for humans and False for AI
+    playerOne = True  # True for humans and False for AI
     playerTwo = False  # initially AI move will be False
     gameOver = False
 
@@ -89,7 +88,9 @@ def main() -> None:
 
         # AI move finder:
         if not gameOver and not humanTurn:
-            move = findRandomMove(validMoves)
+            move = findBestMove(gs, validMoves)
+            if move is None:  # If no best move found, use random move
+                move = findRandomMove(validMoves)
             if move is not None:  # Check if AI found a valid move
                 animate_move(screen, gs.board, images, move, gs, clock)
                 gs.makeMove(move)
