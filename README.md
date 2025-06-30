@@ -1,11 +1,13 @@
 # Castled_Realms
 
-This project is made out of Pygame using some AI techniques to make a smart opponent for you who can defeat you😎😎.
+This project is built using Pygame, sprinkled with some AI magic to create a smart opponent thats ready to crush you on the board 😎😎.
 
 ## Extra features:
 
-I have integrated modern chess moves like em-passant, Castling, pawn promotion(Currently it is only promoted to Queen {Honestly I always prefer Queen while playing except a knight of course}).
+-   Supports advanced mechanics like en passant, castling, and pawn promotion (currently auto-promotes to Queen — I mean, who doesn't go for a Queen, right? Unless you're into that sneaky Knight play 😏).
 
--   Working on Neta Max and alpha beta pruning searching algorithms to find a good move.
+-   The engine uses the classic NegaMax algorithm enhanced with alpha-beta pruning to prune away bad moves and search for the best ones. Yes, it gets a bit slow at times (but hey I'm talking about searching through more than 9000+ possible moves 😅).
 
--   Currently exploring the possibilies to integrate NN into it😎😎.
+-   Working on some advanced search techniques to make the AI faster in response.{So stay tuned...🫡🫡}
+
+-   Currently exploring how to integrate Neural Networks into the decision-making process for even smarter gameplay.🫡
