@@ -1,3 +1,6 @@
+import asyncio
+import time
+
 import pygame as p
 from config import DIMENSION, HEIGHT, MAX_FPS, SQUARE_SIZE, WIDTH
 from engine import Move, State
@@ -5,8 +8,9 @@ from smartMoveFinder import findBestMove, findRandomMove
 from ui import animate_move, draw_game_state, load_images
 
 
-def main() -> None:
+async def main() -> None:
     """Main game loop."""
+    ai_move_times = []
     p.init()
     p.display.set_caption("Chess")
     screen = p.display.set_mode((WIDTH, HEIGHT))
@@ -88,6 +92,7 @@ def main() -> None:
 
         # AI move finder:
         if not gameOver and not humanTurn:
+            start_time = time.perf_counter()
             move = findBestMove(gs, validMoves)
             if move is None:  # If no best move found, use random move
                 move = findRandomMove(validMoves)
@@ -95,6 +100,12 @@ def main() -> None:
                 animate_move(screen, gs.board, images, move, gs, clock)
                 gs.makeMove(move)
                 moveMade = True
+
+            end_time = time.perf_counter()
+            ai_move_times.append(end_time - start_time)
+            if len(ai_move_times) % 10 == 0:
+                avg_time = sum(ai_move_times) / len(ai_move_times)
+                print(f"Average AI move time: {avg_time:.3f} seconds")
 
         if moveMade:
             validMoves = gs.getValidMoves()
@@ -108,8 +119,9 @@ def main() -> None:
         draw_game_state(screen, gs.board, images, sqSelected, validMoves, gs)
 
         clock.tick(MAX_FPS)
+        await asyncio.sleep(0)
         p.display.flip()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

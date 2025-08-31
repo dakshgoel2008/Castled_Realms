@@ -153,10 +153,11 @@ def scoreBoard(gs):
 # TODO: will improve this
 def evaluateKingSafety(gs):
     """Evaluate king safety"""
+    # will imprpove it a bit later.
     safety_score = 0
 
     # Find kings
-    white_king_pos = None
+    white_king_pos = None   
     black_king_pos = None
 
     for row in range(8):
@@ -212,15 +213,16 @@ def evaluatePawnStructure(gs):
     return pawn_score
 
 
+# currently it is only woking for Knight but haver to implement other pieces functionality also.
 def evaluateMobility(gs):
     """Evaluate piece mobility"""
-    # This is a simplified version - in practice, you'd count legal moves
     mobility_score = 0
 
-    # Knights in center are more mobile
+    # Knights in center are more mobile and also covers more squares.
     for row in range(8):
         for col in range(8):
             piece = gs.board[row][col]
+            # piece is a knight
             if piece in ["wN", "bN"]:
                 center_distance = abs(row - 3.5) + abs(col - 3.5)
                 mobility_bonus = max(0, 7 - center_distance) * 2
@@ -229,5 +231,15 @@ def evaluateMobility(gs):
                     mobility_score += mobility_bonus
                 else:
                     mobility_score -= mobility_bonus
+
+            # if piece is a bishop
+            # if piece in ["wB", "bB"]:
+
+
+            # piece is a rook
+            # if piece in ["wR", "bR"]:
+
+            # piece is a Queen
+            # if piece in ["wQ", "bQ"]:
 
     return mobility_score
