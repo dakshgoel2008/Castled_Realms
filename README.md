@@ -65,3 +65,13 @@ The AI opponent uses a sophisticated algorithm to determine its moves:
 
 -   **Enhanced AI**: I am exploring advanced search techniques and looking forward for the integration of Neural Networks to make the AI even smarter and faster.
 -   **Improved Mobility Evaluation**: Looking forward to improve the mobility evaluation for all the pieces.
+
+## Sample Screenshots
+- ###  Scnerio given to AI
+![Scnerio given to AI](images/Example_scenerio_to_AI.png)
+
+- ###  AI Output
+![Output Window](images/Move_played_by_AI.png)
+
+- ### Total move calculated
+ ![Moves Window](images/Move_evaluations.png)
